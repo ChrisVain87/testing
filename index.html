@@ -1,0 +1,2316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tesla Trade-in · EMEA MVP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   DESIGN TOKENS
+   ============================================================ */
+:root {
+  --bg: #0D0D0D;
+  --surface: #161616;
+  --card: #1E1E1E;
+  --border: #2A2A2A;
+  --red: #E82127;
+  --white: #FFFFFF;
+  --muted: #6B6B6B;
+  --success: #3DBE71;
+  --warning: #F5A623;
+  --radius-btn: 2px;
+  --radius-card: 4px;
+  --transition: 300ms ease;
+}
+
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--white);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+button { font-family: inherit; cursor: pointer; border: none; outline: none; }
+input, select { font-family: inherit; }
+a { color: inherit; text-decoration: none; }
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+}
+.nav-left { display: flex; align-items: center; gap: 12px; }
+.tesla-logo { height: 14px; width: auto; color: var(--white); }
+.nav-tabs { display: flex; gap: 4px; }
+.nav-tab {
+  background: none;
+  color: var(--muted);
+  padding: 6px 16px;
+  border-radius: var(--radius-btn);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  transition: color var(--transition), background var(--transition);
+  border: 1px solid transparent;
+}
+.nav-tab:hover { color: var(--white); }
+.nav-tab.active { color: var(--white); border-color: var(--border); background: var(--card); }
+.nav-right { display: flex; align-items: center; }
+.mvp-badge {
+  background: var(--red);
+  color: var(--white);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: var(--radius-btn);
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: var(--radius-btn);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition: all var(--transition);
+  cursor: pointer;
+}
+.btn-primary { background: var(--white); color: #000; border: none; }
+.btn-primary:hover { background: #e8e8e8; }
+.btn-danger { background: transparent; color: var(--red); border: 1px solid var(--red); }
+.btn-danger:hover { background: rgba(232,33,39,0.1); }
+.btn-ghost { background: transparent; color: var(--white); border: 1px solid var(--border); }
+.btn-ghost:hover { border-color: var(--white); }
+.btn-sm { padding: 8px 16px; font-size: 12px; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ============================================================
+   VIEWS
+   ============================================================ */
+.view { display: none; }
+.view.active { display: block; }
+
+/* ============================================================
+   WIZARD LAYOUT
+   ============================================================ */
+.wizard-container { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+.wizard-step { display: none; animation: fadeUp 300ms ease; }
+.wizard-step.active { display: block; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Progress bar */
+.wizard-progress {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  position: sticky;
+  top: 56px;
+  z-index: 900;
+}
+.progress-inner {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  height: 48px;
+  gap: 0;
+}
+.progress-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  cursor: default;
+}
+.progress-step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.progress-step.done .progress-step-num { background: var(--success); border-color: var(--success); color: #000; }
+.progress-step.active .progress-step-num { background: var(--red); border-color: var(--red); color: var(--white); }
+.progress-step.active { color: var(--white); }
+.progress-step.done { color: var(--success); }
+.progress-divider { width: 24px; height: 1px; background: var(--border); flex-shrink: 0; }
+
+/* Step labels - hide on mobile */
+.step-label { display: none; }
+@media (min-width: 768px) { .step-label { display: inline; } }
+@media (max-width: 768px) { .progress-step { flex: 0 0 auto; } .progress-divider { width: 12px; } }
+
+/* Section titles */
+.step-title { font-size: 28px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.02em; }
+.step-subtitle { color: var(--muted); margin-bottom: 32px; font-size: 15px; }
+.step-content { padding: 40px 0 80px; }
+
+/* Form elements */
+.form-group { margin-bottom: 16px; }
+.form-label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+.form-input {
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--white);
+  padding: 12px 16px;
+  border-radius: var(--radius-card);
+  font-size: 14px;
+  transition: border-color var(--transition);
+}
+.form-input:focus { outline: none; border-color: var(--white); }
+.form-input::placeholder { color: var(--muted); }
+.input-suffix-wrap { position: relative; }
+.input-suffix {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  pointer-events: none;
+}
+select.form-input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B6B6B' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+/* Dutch License Plate */
+.plate-input-wrap {
+  display: flex;
+  align-items: center;
+  background: #F0B000;
+  border: 2px solid #C89000;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+.plate-flag {
+  background: #003087;
+  color: #F0B000;
+  padding: 0 10px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 36px;
+  min-height: 48px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.plate-flag-stars { font-size: 8px; letter-spacing: 1px; }
+.plate-input {
+  background: transparent;
+  border: none;
+  color: #000;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 10px 14px;
+  flex: 1;
+  font-family: 'Inter', sans-serif;
+}
+.plate-input:focus { outline: none; }
+.plate-input::placeholder { color: #888; font-weight: 500; }
+.plate-hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+/* Manual entry collapse */
+.manual-toggle {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 8px 0;
+  text-decoration: underline;
+  transition: color var(--transition);
+  display: block;
+  margin-bottom: 12px;
+}
+.manual-toggle:hover { color: var(--white); }
+.manual-fields { display: none; }
+.manual-fields.open { display: block; animation: fadeUp 300ms ease; }
+.manual-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 480px) { .manual-grid { grid-template-columns: 1fr; } }
+
+/* Loading spinner overlay */
+.spinner-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(13,13,13,0.85);
+  z-index: 9000;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 20px;
+}
+.spinner-overlay.active { display: flex; }
+.spinner {
+  width: 44px;
+  height: 44px;
+  border: 3px solid var(--border);
+  border-top-color: var(--red);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner-text { color: var(--muted); font-size: 14px; }
+
+/* ============================================================
+   STEP 3: Market Estimate
+   ============================================================ */
+.car-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--success);
+  padding: 14px 18px;
+  border-radius: var(--radius-card);
+  margin-bottom: 32px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.check-icon { color: var(--success); font-size: 18px; }
+
+.section-heading { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 16px; }
+.value-boxes { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+.value-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 16px;
+  text-align: center;
+}
+.value-box.highlight { border-color: var(--red); background: rgba(232,33,39,0.06); }
+.value-label { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+.value-amount { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+.value-box.highlight .value-amount { color: var(--red); }
+
+.range-bar-wrap { height: 6px; background: var(--card); border-radius: 3px; position: relative; margin-bottom: 10px; overflow: visible; }
+.range-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(to right, #3DBE71, #F5A623, #E82127); }
+.range-dot {
+  width: 14px;
+  height: 14px;
+  background: var(--red);
+  border: 2px solid var(--white);
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 3px rgba(232,33,39,0.3);
+}
+.range-note { font-size: 12px; color: var(--muted); margin-bottom: 28px; }
+
+/* Comparable listings grid */
+.listings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 28px; }
+@media (max-width: 600px) { .listings-grid { grid-template-columns: 1fr; } }
+.listing-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 14px;
+  transition: border-color var(--transition);
+}
+.listing-card:hover { border-color: var(--muted); }
+.listing-title { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.listing-meta { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+.listing-price { font-size: 18px; font-weight: 800; letter-spacing: -0.01em; }
+.listing-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+.source-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.08);
+  color: var(--muted);
+  letter-spacing: 0.03em;
+}
+.km-away { font-size: 11px; color: var(--muted); }
+
+/* ============================================================
+   STEP 4: AI Damage Inspection
+   ============================================================ */
+.upload-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 600px) { .upload-grid { grid-template-columns: repeat(2, 1fr); } }
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-card);
+  height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+.upload-zone:hover { border-color: var(--muted); background: rgba(255,255,255,0.02); }
+.upload-zone.uploaded { border-style: solid; border-color: var(--success); }
+.upload-zone-icon { font-size: 24px; opacity: 0.4; }
+.upload-zone-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.upload-check { color: var(--success); font-size: 24px; display: none; }
+.upload-zone.uploaded .upload-zone-icon { display: none; }
+.upload-zone.uploaded .upload-check { display: block; }
+.upload-zone.uploaded .upload-zone-label { color: var(--success); }
+.upload-thumb {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+  opacity: 0.6;
+}
+
+/* AI Results */
+.ai-results { display: none; animation: fadeUp 300ms ease; }
+.ai-results.visible { display: block; }
+.ai-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(232,33,39,0.15);
+  border: 1px solid rgba(232,33,39,0.3);
+  color: var(--red);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 2px;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+.damage-table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+.damage-table td { padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.damage-table td:last-child { text-align: right; }
+.damage-row-bad { color: var(--white); }
+.damage-row-good { color: var(--success); }
+.damage-neg { color: var(--warning); font-weight: 600; }
+.damage-subtotal { border-top: 2px solid var(--border) !important; border-bottom: none !important; font-weight: 700; font-size: 14px; }
+.damage-subtotal td:last-child { color: var(--warning); }
+.repair-note { font-size: 12px; color: var(--muted); margin-top: 12px; padding: 10px 14px; background: var(--card); border-radius: var(--radius-card); border-left: 2px solid var(--muted); }
+
+/* ============================================================
+   STEP 5: Final Offer
+   ============================================================ */
+.offer-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 28px;
+  margin-bottom: 20px;
+}
+.offer-table { width: 100%; border-collapse: collapse; }
+.offer-table tr td { padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+.offer-table tr:last-child td { border-bottom: none; padding-top: 16px; }
+.offer-table td:last-child { text-align: right; color: var(--muted); }
+.offer-divider td { border-bottom: 2px solid var(--white) !important; padding: 0 !important; height: 1px; }
+.offer-total td { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+.offer-total td:first-child { color: var(--white); }
+.offer-total td:last-child { color: var(--red) !important; font-size: 28px; }
+.offer-deduction { color: var(--warning) !important; }
+.zero-margin-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(61,190,113,0.1);
+  border: 1px solid rgba(61,190,113,0.25);
+  border-radius: var(--radius-card);
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--success);
+  margin-bottom: 16px;
+}
+.validity-banner {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 10px 16px;
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.validity-ref { color: var(--white); font-weight: 600; font-size: 13px; }
+.transparency-toggle {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+  display: block;
+  margin-top: 16px;
+  padding: 0;
+}
+.transparency-toggle:hover { color: var(--white); }
+.transparency-content {
+  display: none;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 16px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.7;
+  animation: fadeUp 300ms ease;
+}
+.transparency-content.open { display: block; }
+
+/* ============================================================
+   STEP 6: Link Tesla Order
+   ============================================================ */
+.models-row {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  margin-bottom: 28px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.model-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  flex: 0 0 160px;
+  overflow: hidden;
+  transition: border-color var(--transition);
+}
+.model-card:hover { border-color: var(--muted); }
+.model-photo {
+  width: 100%;
+  height: 100px;
+  background: linear-gradient(135deg, #1a1a1a, #222);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.model-body { padding: 12px; }
+.model-name { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+.model-price { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+.divider-text {
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+  margin: 24px 0;
+  position: relative;
+}
+.divider-text::before, .divider-text::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: calc(50% - 120px);
+  height: 1px;
+  background: var(--border);
+}
+.divider-text::before { left: 0; }
+.divider-text::after { right: 0; }
+.order-link-success { display: none; color: var(--success); font-weight: 600; font-size: 14px; padding: 12px 0; animation: fadeUp 300ms ease; }
+.order-link-success.visible { display: flex; align-items: center; gap: 8px; }
+
+/* ============================================================
+   STEP 7: Confirmation
+   ============================================================ */
+.success-wrap { text-align: center; padding: 40px 0 32px; }
+.success-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(61,190,113,0.15);
+  border: 2px solid var(--success);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  animation: popIn 500ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes popIn {
+  from { transform: scale(0); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.success-checkmark { font-size: 36px; }
+.summary-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 20px;
+  margin-bottom: 24px;
+  text-align: left;
+}
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+}
+.summary-row:last-child { border-bottom: none; }
+.summary-key { color: var(--muted); }
+.summary-val { font-weight: 600; }
+.timeline { list-style: none; margin-bottom: 24px; }
+.timeline-item {
+  display: flex;
+  gap: 16px;
+  padding: 12px 0;
+  position: relative;
+}
+.timeline-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: 36px;
+  width: 1px;
+  height: calc(100% - 24px);
+  background: var(--border);
+}
+.timeline-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 11px;
+  background: var(--card);
+}
+.timeline-dot.done { border-color: var(--success); color: var(--success); background: rgba(61,190,113,0.1); }
+.timeline-dot.pending { border-color: var(--border); color: var(--muted); }
+.timeline-content {}
+.timeline-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+.timeline-subtitle { font-size: 11px; color: var(--muted); }
+.email-note { text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+/* ============================================================
+   VIEW 2: ADMIN DASHBOARD
+   ============================================================ */
+.admin-container { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+@media (max-width: 768px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .stats-row { grid-template-columns: 1fr 1fr; } }
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 20px;
+}
+.stat-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+.stat-value { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; }
+.stat-value.red { color: var(--red); }
+.filter-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.filter-input {
+  flex: 1;
+  min-width: 200px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--white);
+  padding: 10px 14px;
+  border-radius: var(--radius-card);
+  font-size: 13px;
+}
+.filter-input:focus { outline: none; border-color: var(--muted); }
+.filter-input::placeholder { color: var(--muted); }
+.admin-table { width: 100%; border-collapse: collapse; }
+.admin-table thead th {
+  text-align: left;
+  padding: 10px 14px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.admin-table tbody tr {
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.admin-table tbody tr:hover { background: var(--card); }
+.admin-table tbody td { padding: 14px; font-size: 13px; vertical-align: middle; }
+.admin-table tbody td .ref { font-family: 'Courier New', monospace; font-size: 12px; color: var(--muted); }
+.status-dot { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; }
+.ai-score { display: inline-block; padding: 2px 8px; border-radius: 2px; font-size: 11px; font-weight: 700; }
+.ai-score.high { background: rgba(61,190,113,0.15); color: var(--success); }
+.ai-score.med { background: rgba(245,166,35,0.15); color: var(--warning); }
+.ai-score.low { background: rgba(232,33,39,0.15); color: var(--red); }
+.table-action-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--white);
+  padding: 5px 10px;
+  border-radius: var(--radius-btn);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-right: 4px;
+  transition: all var(--transition);
+}
+.table-action-btn:hover { border-color: var(--muted); }
+
+/* Admin side panel */
+.side-panel-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 800;
+}
+.side-panel-overlay.active { display: block; }
+.side-panel {
+  position: fixed;
+  top: 0;
+  right: -480px;
+  width: 480px;
+  max-width: 100vw;
+  height: 100vh;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  z-index: 801;
+  overflow-y: auto;
+  transition: right 0.3s ease;
+  padding: 24px;
+}
+.side-panel.open { right: 0; }
+.panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.panel-close { background: none; border: 1px solid var(--border); color: var(--white); width: 32px; height: 32px; border-radius: var(--radius-btn); font-size: 16px; cursor: pointer; }
+.panel-section { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+.panel-section:last-child { border-bottom: none; }
+.panel-section-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 12px; }
+.detail-row { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; }
+.detail-key { color: var(--muted); }
+.photo-grid-mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.photo-placeholder-mini {
+  aspect-ratio: 4/3;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: var(--border);
+}
+.panel-actions { display: flex; flex-direction: column; gap: 10px; }
+.assign-select {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--white);
+  padding: 10px 14px;
+  border-radius: var(--radius-card);
+  font-size: 13px;
+  width: 100%;
+}
+.assign-select:focus { outline: none; border-color: var(--muted); }
+
+/* ============================================================
+   VIEW 3: WHOLESALER MARKETPLACE
+   ============================================================ */
+.wholesaler-container { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+.marketplace-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: gap; gap: 12px; }
+.marketplace-title { font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 12px; }
+.count-badge { background: var(--red); color: var(--white); padding: 3px 10px; border-radius: 10px; font-size: 13px; font-weight: 700; }
+.filter-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+.filter-chip {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.filter-chip:hover, .filter-chip.active { border-color: var(--white); color: var(--white); }
+.cars-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+@media (max-width: 1024px) { .cars-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .cars-grid { grid-template-columns: 1fr; } }
+.car-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  transition: border-color var(--transition), transform var(--transition);
+}
+.car-card:hover { border-color: var(--muted); transform: translateY(-2px); }
+.car-photo {
+  position: relative;
+  height: 180px;
+  background: linear-gradient(135deg, #161616, #1e1e1e);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.car-silhouette { font-size: 64px; opacity: 0.15; }
+.car-model-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0,0,0,0.7);
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--white);
+  backdrop-filter: blur(4px);
+}
+.grade-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+}
+.grade-a { background: rgba(61,190,113,0.9); color: #000; }
+.grade-b { background: rgba(245,166,35,0.9); color: #000; }
+.grade-c { background: rgba(232,33,39,0.9); color: var(--white); }
+.car-body { padding: 16px; }
+.car-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.car-specs { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+.ai-damage-summary {
+  font-size: 11px;
+  color: var(--muted);
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 8px 10px;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+.car-location { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+.car-location span { color: var(--white); font-weight: 500; }
+.price-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 12px 14px;
+  margin-bottom: 6px;
+}
+.price-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 4px; }
+.price-amount { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+.price-note { font-size: 10px; color: var(--muted); margin-bottom: 14px; }
+.car-actions { display: flex; gap: 8px; }
+.car-actions .btn { flex: 1; padding: 10px; font-size: 12px; }
+.locked-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(61,190,113,0.1);
+  border: 1px solid rgba(61,190,113,0.25);
+  color: var(--success);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: var(--radius-card);
+  width: 100%;
+  justify-content: center;
+}
+
+/* ============================================================
+   MODAL
+   ============================================================ */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 5000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 28px;
+  width: 100%;
+  max-width: 440px;
+  animation: fadeUp 300ms ease;
+}
+.modal-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+.modal-subtitle { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+.modal-car-summary {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 14px;
+  margin-bottom: 20px;
+  font-size: 13px;
+}
+.modal-car-name { font-weight: 700; margin-bottom: 4px; }
+.modal-car-detail { color: var(--muted); font-size: 12px; }
+.modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+.modal-actions .btn { flex: 1; }
+.date-input-wrap { margin-bottom: 16px; }
+
+/* ============================================================
+   TOAST NOTIFICATIONS
+   ============================================================ */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 360px;
+}
+.toast {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--success);
+  border-radius: var(--radius-card);
+  padding: 14px 16px;
+  font-size: 13px;
+  animation: slideInRight 300ms ease;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+.toast.error { border-left-color: var(--red); }
+.toast.warning { border-left-color: var(--warning); }
+@keyframes slideInRight {
+  from { transform: translateX(20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* ============================================================
+   HERO (Step 1)
+   ============================================================ */
+.hero {
+  min-height: calc(100vh - 104px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 60px 24px;
+  background: radial-gradient(ellipse at 50% 0%, rgba(232,33,39,0.12) 0%, transparent 60%);
+}
+.hero-logo { margin-bottom: 32px; }
+.hero-logo svg { height: 40px; color: var(--white); }
+.hero-h1 { font-size: clamp(36px, 6vw, 60px); font-weight: 900; letter-spacing: -0.04em; margin-bottom: 16px; line-height: 1.05; }
+.hero-sub { font-size: clamp(15px, 2vw, 18px); color: var(--muted); max-width: 500px; margin: 0 auto 40px; line-height: 1.6; }
+.hero-cta { font-size: 16px; padding: 16px 36px; margin-bottom: 20px; }
+.hero-fine { font-size: 12px; color: var(--muted); }
+.hero-fine strong { color: var(--white); }
+
+/* Misc layout */
+.step-nav { display: flex; gap: 12px; margin-top: 32px; align-items: center; }
+.back-btn { background: none; border: none; color: var(--muted); font-size: 13px; cursor: pointer; padding: 0; transition: color var(--transition); }
+.back-btn:hover { color: var(--white); }
+.section-gap { margin-top: 32px; }
+.table-wrap { overflow-x: auto; }
+</style>
+</head>
+<body>
+<!-- ============================================================
+     NAVIGATION
+     ============================================================ -->
+<nav class="nav">
+  <div class="nav-left">
+    <svg class="tesla-logo" viewBox="0 0 342 35" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 .1a9.7 9.7 0 0 0 7 7h11l.5.5v27h6V7.6l.5-.5h11a9.7 9.7 0 0 0 7-7H0zm238.6 0A10 10 0 0 0 233 5V34.6h6V21l.5-.4h18l.5.4v13.6h6V5A10 10 0 0 0 256 .1z"/>
+    </svg>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchView('wizard')">Trade In</button>
+    <button class="nav-tab" onclick="switchView('admin')">Admin</button>
+    <button class="nav-tab" onclick="switchView('wholesaler')">Wholesaler</button>
+  </div>
+  <div class="nav-right">
+    <span class="mvp-badge">MVP Demo</span>
+  </div>
+</nav>
+
+<!-- Loading spinner overlay -->
+<div class="spinner-overlay" id="spinnerOverlay">
+  <div class="spinner"></div>
+  <div class="spinner-text" id="spinnerText">Looking up your vehicle...</div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ============================================================
+     VIEW 1: WIZARD
+     ============================================================ -->
+<div id="view-wizard" class="view active">
+
+  <!-- Wizard progress bar (hidden on step 1 hero) -->
+  <div class="wizard-progress" id="wizardProgress" style="display:none">
+    <div class="progress-inner">
+      <div class="progress-step" id="pstep1">
+        <div class="progress-step-num">1</div>
+        <span class="step-label">Start</span>
+      </div>
+      <div class="progress-divider"></div>
+      <div class="progress-step" id="pstep2">
+        <div class="progress-step-num">2</div>
+        <span class="step-label">Vehicle</span>
+      </div>
+      <div class="progress-divider"></div>
+      <div class="progress-step" id="pstep3">
+        <div class="progress-step-num">3</div>
+        <span class="step-label">Market</span>
+      </div>
+      <div class="progress-divider"></div>
+      <div class="progress-step" id="pstep4">
+        <div class="progress-step-num">4</div>
+        <span class="step-label">Inspect</span>
+      </div>
+      <div class="progress-divider"></div>
+      <div class="progress-step" id="pstep5">
+        <div class="progress-step-num">5</div>
+        <span class="step-label">Offer</span>
+      </div>
+      <div class="progress-divider"></div>
+      <div class="progress-step" id="pstep6">
+        <div class="progress-step-num">6</div>
+        <span class="step-label">Tesla</span>
+      </div>
+      <div class="progress-divider"></div>
+      <div class="progress-step" id="pstep7">
+        <div class="progress-step-num">7</div>
+        <span class="step-label">Done</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 1: Hero -->
+  <div class="wizard-step active" id="step1">
+    <section class="hero">
+      <div class="hero-logo">
+        <svg viewBox="0 0 342 35" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0 .1a9.7 9.7 0 0 0 7 7h11l.5.5v27h6V7.6l.5-.5h11a9.7 9.7 0 0 0 7-7H0zm238.6 0A10 10 0 0 0 233 5V34.6h6V21l.5-.4h18l.5.4v13.6h6V5A10 10 0 0 0 256 .1z"/>
+        </svg>
+      </div>
+      <h1 class="hero-h1">Trade in your car.</h1>
+      <p class="hero-sub">Get a real wholesale-price offer in minutes. No haggling. No hidden margins.</p>
+      <button class="btn btn-primary hero-cta" onclick="goToStep(2)">Get My Trade-in Value &rarr;</button>
+      <p class="hero-fine">Tesla passes <strong>100%</strong> of the wholesale value directly to you</p>
+    </section>
+  </div>
+
+  <!-- STEP 2: Vehicle Identification -->
+  <div class="wizard-step" id="step2">
+    <div class="wizard-container">
+      <div class="step-content">
+        <h2 class="step-title">Tell us about your car</h2>
+        <p class="step-subtitle">We'll look it up automatically using your license plate.</p>
+
+        <!-- Dutch plate input -->
+        <div class="form-group">
+          <label class="form-label">License Plate</label>
+          <div class="plate-input-wrap">
+            <div class="plate-flag">
+              <div class="plate-flag-stars">&#9733;&#9733;&#9733;</div>
+              <div style="font-size:10px;font-weight:800;letter-spacing:1px;color:#F0C040;">NL</div>
+            </div>
+            <input type="text" class="plate-input" id="plateInput" placeholder="AB-123-C" maxlength="9" oninput="formatPlate(this)">
+          </div>
+          <div class="plate-hint">Format: AB-123-C &middot; Dutch kenteken</div>
+        </div>
+
+        <!-- VIN optional -->
+        <div class="form-group">
+          <label class="form-label">VIN <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(optional &mdash; for more accuracy)</span></label>
+          <input type="text" class="form-input" id="vinInput" placeholder="e.g. WBA5B31000G123456" maxlength="17">
+        </div>
+
+        <!-- Odometer -->
+        <div class="form-group">
+          <label class="form-label">Odometer Reading</label>
+          <div class="input-suffix-wrap">
+            <input type="number" class="form-input" id="odomInput" placeholder="87000" min="0" max="999999" style="padding-right:50px">
+            <span class="input-suffix">km</span>
+          </div>
+        </div>
+
+        <!-- Manual entry toggle -->
+        <button class="manual-toggle" onclick="toggleManual()">&#9660; Or enter manually</button>
+        <div class="manual-fields" id="manualFields">
+          <div class="manual-grid">
+            <div class="form-group">
+              <label class="form-label">Make</label>
+              <select class="form-input" id="manualMake">
+                <option value="">Select make</option>
+                <option>BMW</option><option>Audi</option><option>Mercedes</option>
+                <option>Volkswagen</option><option>Volvo</option><option>Ford</option>
+                <option>Toyota</option><option>Renault</option><option>Peugeot</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Model</label>
+              <input type="text" class="form-input" id="manualModel" placeholder="e.g. 5 Series 520d">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Year</label>
+              <select class="form-input" id="manualYear">
+                <option value="">Year</option>
+                <option>2024</option><option>2023</option><option>2022</option>
+                <option>2021</option><option>2020</option><option>2019</option>
+                <option>2018</option><option>2017</option><option>2016</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Fuel</label>
+              <select class="form-input" id="manualFuel">
+                <option value="">Fuel type</option>
+                <option>Petrol</option><option>Diesel</option><option>Electric</option>
+                <option>Hybrid</option><option>Plug-in Hybrid</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Transmission</label>
+              <select class="form-input" id="manualTrans">
+                <option value="">Gearbox</option>
+                <option>Automatic</option><option>Manual</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Color</label>
+              <input type="text" class="form-input" id="manualColor" placeholder="e.g. Mineral Grey">
+            </div>
+          </div>
+        </div>
+
+        <div class="step-nav">
+          <button class="back-btn" onclick="goToStep(1)">&larr; Back</button>
+          <button class="btn btn-primary" onclick="lookupVehicle()">Look up my car &rarr;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: Market Estimate + Comparables -->
+  <div class="wizard-step" id="step3">
+    <div class="wizard-container">
+      <div class="step-content">
+
+        <!-- Confirmed car banner -->
+        <div class="car-banner" id="carBanner">
+          <span class="check-icon">&#10003;</span>
+          <span id="carBannerText">2021 BMW 5 Series 520d &middot; Diesel &middot; Auto &middot; Mineral Grey</span>
+        </div>
+
+        <!-- Market Value Range -->
+        <div>
+          <div class="section-heading">Market Value Range</div>
+          <div class="value-boxes">
+            <div class="value-box">
+              <div class="value-label">Low</div>
+              <div class="value-amount">&euro;28,400</div>
+            </div>
+            <div class="value-box highlight">
+              <div class="value-label">Median &star;</div>
+              <div class="value-amount">&euro;33,800</div>
+            </div>
+            <div class="value-box">
+              <div class="value-label">High</div>
+              <div class="value-amount">&euro;39,200</div>
+            </div>
+          </div>
+          <div class="range-bar-wrap">
+            <div class="range-bar-fill" style="width:100%"></div>
+            <div class="range-dot"></div>
+          </div>
+          <p class="range-note">Based on 47 comparable sales in the last 90 days in the Netherlands</p>
+        </div>
+
+        <!-- Similar Listings -->
+        <div class="section-gap">
+          <div class="section-heading">Similar Listings Near You</div>
+          <div class="listings-grid">
+            <div class="listing-card">
+              <div class="listing-title">2020 BMW 520d</div>
+              <div class="listing-meta">94,000 km &middot; Diesel &middot; Automatic</div>
+              <div class="listing-price">&euro;31,500</div>
+              <div class="listing-footer">
+                <span class="source-badge">AutoScout24</span>
+                <span class="km-away">12 km away</span>
+              </div>
+            </div>
+            <div class="listing-card">
+              <div class="listing-title">2021 BMW 520d xDrive</div>
+              <div class="listing-meta">78,000 km &middot; Diesel &middot; Automatic</div>
+              <div class="listing-price">&euro;35,900</div>
+              <div class="listing-footer">
+                <span class="source-badge">AutoTrack</span>
+                <span class="km-away">28 km away</span>
+              </div>
+            </div>
+            <div class="listing-card">
+              <div class="listing-title">2021 BMW 520d M-Sport</div>
+              <div class="listing-meta">102,000 km &middot; Diesel &middot; Automatic</div>
+              <div class="listing-price">&euro;29,800</div>
+              <div class="listing-footer">
+                <span class="source-badge">Marktplaats</span>
+                <span class="km-away">8 km away</span>
+              </div>
+            </div>
+            <div class="listing-card">
+              <div class="listing-title">2022 BMW 520d</div>
+              <div class="listing-meta">61,000 km &middot; Diesel &middot; Automatic</div>
+              <div class="listing-price">&euro;39,100</div>
+              <div class="listing-footer">
+                <span class="source-badge">AutoScout24</span>
+                <span class="km-away">45 km away</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-nav">
+          <button class="back-btn" onclick="goToStep(2)">&larr; Back</button>
+          <button class="btn btn-primary" onclick="goToStep(4)">Continue to Inspection &rarr;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4: AI Damage Inspection -->
+  <div class="wizard-step" id="step4">
+    <div class="wizard-container">
+      <div class="step-content">
+        <h2 class="step-title">AI Damage Inspection</h2>
+        <p class="step-subtitle">Upload photos of your car. Our AI detects damage and provides transparent cost estimates.</p>
+
+        <!-- Upload grid -->
+        <div class="upload-grid" id="uploadGrid">
+          <div class="upload-zone" id="zone-front" onclick="simulateUpload('zone-front')">
+            <div class="upload-zone-icon">&#128247;</div>
+            <div class="upload-zone-label">Front</div>
+            <div class="upload-check">&#10003;</div>
+          </div>
+          <div class="upload-zone" id="zone-rear" onclick="simulateUpload('zone-rear')">
+            <div class="upload-zone-icon">&#128247;</div>
+            <div class="upload-zone-label">Rear</div>
+            <div class="upload-check">&#10003;</div>
+          </div>
+          <div class="upload-zone" id="zone-driver" onclick="simulateUpload('zone-driver')">
+            <div class="upload-zone-icon">&#128247;</div>
+            <div class="upload-zone-label">Driver Side</div>
+            <div class="upload-check">&#10003;</div>
+          </div>
+          <div class="upload-zone" id="zone-passenger" onclick="simulateUpload('zone-passenger')">
+            <div class="upload-zone-icon">&#128247;</div>
+            <div class="upload-zone-label">Passenger Side</div>
+            <div class="upload-check">&#10003;</div>
+          </div>
+          <div class="upload-zone" id="zone-interior" onclick="simulateUpload('zone-interior')">
+            <div class="upload-zone-icon">&#128247;</div>
+            <div class="upload-zone-label">Interior</div>
+            <div class="upload-check">&#10003;</div>
+          </div>
+          <div class="upload-zone" id="zone-dashboard" onclick="simulateUpload('zone-dashboard')">
+            <div class="upload-zone-icon">&#128247;</div>
+            <div class="upload-zone-label">Dashboard</div>
+            <div class="upload-check">&#10003;</div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" id="analyzeBtn" onclick="runAIAnalysis()">Analyze Photos</button>
+
+        <!-- AI Results (hidden until analysis) -->
+        <div class="ai-results section-gap" id="aiResults">
+          <h3 style="font-size:16px;font-weight:700;margin-bottom:16px">
+            Detected Issues
+            <span class="ai-badge">&#129302; AI</span>
+          </h3>
+          <table class="damage-table">
+            <tbody>
+              <tr class="damage-row-bad">
+                <td>&#10007; Front bumper scratch <span style="color:var(--muted);font-size:11px">(minor)</span></td>
+                <td class="damage-neg">-&euro;180</td>
+              </tr>
+              <tr class="damage-row-bad">
+                <td>&#10007; Rear door dent <span style="color:var(--muted);font-size:11px">(medium)</span></td>
+                <td class="damage-neg">-&euro;420</td>
+              </tr>
+              <tr class="damage-row-bad">
+                <td>&#10007; Windscreen chip <span style="color:var(--muted);font-size:11px">(small)</span></td>
+                <td class="damage-neg">-&euro;95</td>
+              </tr>
+              <tr class="damage-row-good">
+                <td>&#10003; No structural damage detected</td>
+                <td style="color:var(--success)">&#10003;</td>
+              </tr>
+              <tr class="damage-row-good">
+                <td>&#10003; Interior condition: Good</td>
+                <td style="color:var(--success)">&#10003;</td>
+              </tr>
+              <tr class="damage-subtotal">
+                <td style="font-weight:700">Total damage deductions</td>
+                <td style="color:var(--warning);font-weight:800">-&euro;695</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="repair-note">All repairs are assessed at cost price &mdash; no margin added</div>
+
+          <div class="step-nav">
+            <button class="back-btn" onclick="goToStep(3)">&larr; Back</button>
+            <button class="btn btn-primary" onclick="goToStep(5)">Confirm &amp; See My Offer &rarr;</button>
+          </div>
+        </div>
+
+        <div class="step-nav" id="step4BackNav">
+          <button class="back-btn" onclick="goToStep(3)">&larr; Back</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 5: Final Offer -->
+  <div class="wizard-step" id="step5">
+    <div class="wizard-container">
+      <div class="step-content">
+        <h2 class="step-title">Your Tesla Trade-in Offer</h2>
+
+        <div class="offer-card">
+          <table class="offer-table">
+            <tbody>
+              <tr>
+                <td>Market Median Value</td>
+                <td style="color:var(--white);text-align:right">&euro;33,800</td>
+              </tr>
+              <tr>
+                <td>Mileage adjustment <span style="color:var(--muted);font-size:11px">(87,000km vs 80,000km avg)</span></td>
+                <td class="offer-deduction" style="text-align:right">-&euro;1,200</td>
+              </tr>
+              <tr>
+                <td>AI Damage Deductions</td>
+                <td class="offer-deduction" style="text-align:right">-&euro;695</td>
+              </tr>
+              <tr>
+                <td>Vehicle Preparation</td>
+                <td class="offer-deduction" style="text-align:right">-&euro;350</td>
+              </tr>
+              <tr>
+                <td>Logistics &amp; Admin</td>
+                <td class="offer-deduction" style="text-align:right">-&euro;250</td>
+              </tr>
+              <tr class="offer-divider"><td colspan="2"></td></tr>
+              <tr class="offer-total">
+                <td>YOUR TRADE-IN OFFER</td>
+                <td>&euro;31,305</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="zero-margin-badge">
+          <span>&#128274;</span>
+          Zero margin &mdash; wholesale price passed directly to you
+        </div>
+
+        <div class="validity-banner">
+          <span>Offer valid for <strong>7 days</strong></span>
+          <span class="validity-ref">Ref: TI-2024-08471</span>
+        </div>
+
+        <div class="step-nav">
+          <button class="back-btn" onclick="goToStep(4)">&larr; Back</button>
+          <div style="display:flex;gap:12px">
+            <button class="btn btn-ghost" onclick="showToast('Review request submitted. Our team will contact you within 24h.','warning')">Request Review</button>
+            <button class="btn btn-primary" onclick="goToStep(6)">Accept Offer &rarr;</button>
+          </div>
+        </div>
+
+        <button class="transparency-toggle" onclick="toggleTransparency()">How we calculate this &darr;</button>
+        <div class="transparency-content" id="transparencyContent">
+          <p style="margin-bottom:8px"><strong>Our formula is simple and fully transparent:</strong></p>
+          <p>1. We source median market value from 47+ live listings on AutoScout24, Marktplaats, and AutoTrack across the Netherlands.</p>
+          <p style="margin-top:6px">2. Mileage is compared against the segment average. Above-average mileage is deducted at the ANWB depreciation rate (&euro;0.14/km).</p>
+          <p style="margin-top:6px">3. AI damage estimates are sourced from certified repair cost databases (cost price, no markup).</p>
+          <p style="margin-top:6px">4. Vehicle prep (&euro;350) and logistics (&euro;250) cover actual costs only. Tesla adds zero margin.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 6: Link Tesla Order -->
+  <div class="wizard-step" id="step6">
+    <div class="wizard-container">
+      <div class="step-content">
+        <h2 class="step-title">Apply your &euro;31,305 toward a new Tesla</h2>
+        <p class="step-subtitle">Choose a model to configure, or link an existing order.</p>
+
+        <!-- Tesla model cards row -->
+        <div class="models-row">
+          <div class="model-card">
+            <div class="model-photo">Model 3</div>
+            <div class="model-body">
+              <div class="model-name">Model 3</div>
+              <div class="model-price">From &euro;42,990</div>
+              <a href="https://www.tesla.com/nl_nl/model3/design" target="_blank">
+                <button class="btn btn-ghost btn-sm" style="width:100%">Configure</button>
+              </a>
+            </div>
+          </div>
+          <div class="model-card">
+            <div class="model-photo">Model Y</div>
+            <div class="model-body">
+              <div class="model-name">Model Y</div>
+              <div class="model-price">From &euro;44,990</div>
+              <a href="https://www.tesla.com/nl_nl/modely/design" target="_blank">
+                <button class="btn btn-ghost btn-sm" style="width:100%">Configure</button>
+              </a>
+            </div>
+          </div>
+          <div class="model-card">
+            <div class="model-photo">Model S</div>
+            <div class="model-body">
+              <div class="model-name">Model S</div>
+              <div class="model-price">From &euro;94,990</div>
+              <a href="https://www.tesla.com/nl_nl/models/design" target="_blank">
+                <button class="btn btn-ghost btn-sm" style="width:100%">Configure</button>
+              </a>
+            </div>
+          </div>
+          <div class="model-card">
+            <div class="model-photo">Model X</div>
+            <div class="model-body">
+              <div class="model-name">Model X</div>
+              <div class="model-price">From &euro;99,990</div>
+              <a href="https://www.tesla.com/nl_nl/modelx/design" target="_blank">
+                <button class="btn btn-ghost btn-sm" style="width:100%">Configure</button>
+              </a>
+            </div>
+          </div>
+          <div class="model-card">
+            <div class="model-photo">Cybertruck</div>
+            <div class="model-body">
+              <div class="model-name">Cybertruck</div>
+              <div class="model-price">From &euro;89,990</div>
+              <a href="https://www.tesla.com/nl_nl/cybertruck/design" target="_blank">
+                <button class="btn btn-ghost btn-sm" style="width:100%">Configure</button>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Link existing order -->
+        <div class="divider-text">Already have an order? Link it here</div>
+
+        <div class="form-group">
+          <label class="form-label">Tesla Order Reference</label>
+          <input type="text" class="form-input" id="orderRefInput" placeholder="RN1234567890" maxlength="20">
+        </div>
+
+        <div id="orderLinkSuccess" class="order-link-success">
+          <span style="color:var(--success)">&#10003;</span>
+          <span>Order <strong id="linkedOrderRef"></strong> linked successfully</span>
+        </div>
+
+        <button class="btn btn-ghost" onclick="linkOrder()" style="margin-bottom:16px">Link My Order &rarr;</button>
+
+        <p style="font-size:12px;color:var(--muted);margin-bottom:28px">Your trade-in value will be applied as a deposit on your Tesla order</p>
+
+        <div class="step-nav">
+          <button class="back-btn" onclick="goToStep(5)">&larr; Back</button>
+          <button class="btn btn-primary" onclick="goToStep(7)">Complete Trade-in &rarr;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 7: Confirmation -->
+  <div class="wizard-step" id="step7">
+    <div class="wizard-container">
+      <div class="step-content">
+
+        <div class="success-wrap">
+          <div class="success-circle">
+            <span class="success-checkmark">&#10003;</span>
+          </div>
+          <h2 class="step-title">Trade-in Submitted!</h2>
+          <p class="step-subtitle">Your offer has been accepted and is now under review.</p>
+        </div>
+
+        <!-- Summary card -->
+        <div class="summary-card">
+          <div class="summary-row">
+            <span class="summary-key">Trade-in Reference</span>
+            <span class="summary-val" style="font-family:monospace">TI-2024-08471</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-key">Vehicle</span>
+            <span class="summary-val">2021 BMW 5 Series 520d</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-key">Offer Amount</span>
+            <span class="summary-val" style="color:var(--red)">&euro;31,305</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-key">Linked Tesla Order</span>
+            <span class="summary-val" id="confOrderRef">RN1234567890</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-key">Status</span>
+            <span class="summary-val" style="color:var(--warning)">Under Wholesaler Review</span>
+          </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="section-heading">What happens next</div>
+        <ul class="timeline">
+          <li class="timeline-item">
+            <div class="timeline-dot done">&#10003;</div>
+            <div class="timeline-content">
+              <div class="timeline-title">Offer Accepted</div>
+              <div class="timeline-subtitle">Just now</div>
+            </div>
+          </li>
+          <li class="timeline-item">
+            <div class="timeline-dot pending">2</div>
+            <div class="timeline-content">
+              <div class="timeline-title">Wholesaler Review</div>
+              <div class="timeline-subtitle">Est. within 24 hours</div>
+            </div>
+          </li>
+          <li class="timeline-item">
+            <div class="timeline-dot pending">3</div>
+            <div class="timeline-content">
+              <div class="timeline-title">Delivery Date Confirmed</div>
+              <div class="timeline-subtitle">Scheduled by wholesaler</div>
+            </div>
+          </li>
+          <li class="timeline-item">
+            <div class="timeline-dot pending">4</div>
+            <div class="timeline-content">
+              <div class="timeline-title">Tesla Order Activated</div>
+              <div class="timeline-subtitle">Trade-in applied as deposit</div>
+            </div>
+          </li>
+        </ul>
+
+        <p class="email-note">You'll receive email updates at each step</p>
+
+        <div style="text-align:center">
+          <button class="btn btn-ghost" onclick="showToast('Redirecting to My Tesla...')">View in My Tesla &rarr;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end #view-wizard -->
+
+<!-- ============================================================
+     VIEW 2: TESLA ADMIN DASHBOARD
+     ============================================================ -->
+<div id="view-admin" class="view">
+  <div class="admin-container">
+
+    <h2 style="font-size:22px;font-weight:700;margin-bottom:24px">Trade-in Dashboard <span style="color:var(--muted);font-size:16px;font-weight:400">EMEA Region</span></h2>
+
+    <!-- Stats row -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Pending Review</div>
+        <div class="stat-value red">12</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">In Processing</div>
+        <div class="stat-value">8</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Wholesaler Matched</div>
+        <div class="stat-value">23</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Value This Month</div>
+        <div class="stat-value" style="font-size:22px">&euro;1.24M</div>
+      </div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="filter-bar">
+      <input type="text" class="filter-input" placeholder="&#128269; Search by reference, vehicle..." oninput="filterTable(this.value)">
+      <select class="filter-input" style="max-width:180px" onchange="filterTable('')">
+        <option value="">All Statuses</option>
+        <option>Wholesaler Review</option>
+        <option>Matched</option>
+        <option>Delivery Locked</option>
+        <option>Completed</option>
+      </select>
+      <input type="date" class="filter-input" style="max-width:160px">
+    </div>
+
+    <!-- Trade-in Table -->
+    <div class="table-wrap">
+      <table class="admin-table" id="adminTable">
+        <thead>
+          <tr>
+            <th>Reference</th>
+            <th>Vehicle</th>
+            <th>Offer</th>
+            <th>AI Score</th>
+            <th>Status</th>
+            <th>Submitted</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr onclick="openPanel(0)">
+            <td><span class="ref">TI-2024-08471</span></td>
+            <td>2021 BMW 520d</td>
+            <td>&euro;31,305</td>
+            <td><span class="ai-score high">87/100</span></td>
+            <td><span class="status-dot">&#128993; Wholesaler Review</span></td>
+            <td>Today 09:14</td>
+            <td>
+              <button class="table-action-btn" onclick="event.stopPropagation();openPanel(0)">View</button>
+              <button class="table-action-btn" onclick="event.stopPropagation();showToast('Assignment dialog opened')">Assign</button>
+            </td>
+          </tr>
+          <tr onclick="openPanel(1)">
+            <td><span class="ref">TI-2024-08469</span></td>
+            <td>2022 Audi A4 45 TFSI</td>
+            <td>&euro;38,200</td>
+            <td><span class="ai-score high">92/100</span></td>
+            <td><span class="status-dot">&#128994; Matched</span></td>
+            <td>Today 08:31</td>
+            <td>
+              <button class="table-action-btn" onclick="event.stopPropagation();openPanel(1)">View</button>
+            </td>
+          </tr>
+          <tr onclick="openPanel(2)">
+            <td><span class="ref">TI-2024-08465</span></td>
+            <td>2019 VW Passat 2.0 TDI</td>
+            <td>&euro;17,900</td>
+            <td><span class="ai-score med">74/100</span></td>
+            <td><span class="status-dot">&#128993; Wholesaler Review</span></td>
+            <td>Yesterday</td>
+            <td>
+              <button class="table-action-btn" onclick="event.stopPropagation();openPanel(2)">View</button>
+              <button class="table-action-btn" onclick="event.stopPropagation();showToast('Assignment dialog opened')">Assign</button>
+            </td>
+          </tr>
+          <tr onclick="openPanel(3)">
+            <td><span class="ref">TI-2024-08460</span></td>
+            <td>2020 Mercedes C200</td>
+            <td>&euro;24,500</td>
+            <td><span class="ai-score high">81/100</span></td>
+            <td><span class="status-dot">&#128309; Delivery Locked</span></td>
+            <td>Mar 15</td>
+            <td>
+              <button class="table-action-btn" onclick="event.stopPropagation();openPanel(3)">View</button>
+            </td>
+          </tr>
+          <tr onclick="openPanel(4)">
+            <td><span class="ref">TI-2024-08451</span></td>
+            <td>2018 Volvo XC60</td>
+            <td>&euro;21,200</td>
+            <td><span class="ai-score med">79/100</span></td>
+            <td><span class="status-dot">&#9989; Completed</span></td>
+            <td>Mar 14</td>
+            <td>
+              <button class="table-action-btn" onclick="event.stopPropagation();openPanel(4)">View</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Side Panel overlay -->
+  <div class="side-panel-overlay" id="sidePanelOverlay" onclick="closePanel()"></div>
+
+  <!-- Side Panel -->
+  <div class="side-panel" id="sidePanel">
+    <div class="panel-header">
+      <div>
+        <div style="font-size:18px;font-weight:700" id="panelTitle">Trade-in Details</div>
+        <div style="font-size:12px;color:var(--muted)" id="panelRef">TI-2024-08471</div>
+      </div>
+      <button class="panel-close" onclick="closePanel()">&times;</button>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-title">Vehicle</div>
+      <div class="detail-row"><span class="detail-key">Make / Model</span><span id="panelVehicle">2021 BMW 5 Series 520d</span></div>
+      <div class="detail-row"><span class="detail-key">Fuel</span><span>Diesel</span></div>
+      <div class="detail-row"><span class="detail-key">Transmission</span><span>Automatic</span></div>
+      <div class="detail-row"><span class="detail-key">Mileage</span><span id="panelMileage">87,000 km</span></div>
+      <div class="detail-row"><span class="detail-key">Color</span><span>Mineral Grey</span></div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-title">Customer</div>
+      <div class="detail-row"><span class="detail-key">Customer ID</span><span>#4821</span></div>
+      <div class="detail-row"><span class="detail-key">Region</span><span>Amsterdam, NL</span></div>
+      <div class="detail-row"><span class="detail-key">Submitted</span><span id="panelDate">Today 09:14</span></div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-title">Offer Breakdown</div>
+      <div class="detail-row"><span class="detail-key">Market Median</span><span id="panelMedian">&euro;33,800</span></div>
+      <div class="detail-row"><span class="detail-key">Mileage adj.</span><span style="color:var(--warning)">-&euro;1,200</span></div>
+      <div class="detail-row"><span class="detail-key">AI Damage</span><span style="color:var(--warning)">-&euro;695</span></div>
+      <div class="detail-row"><span class="detail-key">Prep &amp; Logistics</span><span style="color:var(--warning)">-&euro;600</span></div>
+      <div class="detail-row" style="border-top:1px solid var(--border);padding-top:8px;margin-top:4px">
+        <span class="detail-key"><strong>Final Offer</strong></span>
+        <span style="font-weight:800;color:var(--red)" id="panelOffer">&euro;31,305</span>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-title">AI Inspection Photos</div>
+      <div class="photo-grid-mini">
+        <div class="photo-placeholder-mini">&#128247;</div>
+        <div class="photo-placeholder-mini">&#128247;</div>
+        <div class="photo-placeholder-mini">&#128247;</div>
+        <div class="photo-placeholder-mini">&#128247;</div>
+        <div class="photo-placeholder-mini">&#128247;</div>
+        <div class="photo-placeholder-mini">&#128247;</div>
+      </div>
+    </div>
+
+    <div class="panel-section panel-actions">
+      <div class="panel-section-title">Actions</div>
+      <select class="assign-select" id="wholesalerSelect">
+        <option value="">Assign to Wholesaler...</option>
+        <option>AutoNL BV (Amsterdam)</option>
+        <option>Koopman Motors (Rotterdam)</option>
+        <option>Timmermans Auto (Utrecht)</option>
+        <option>De Vries Occasions (Den Haag)</option>
+      </select>
+      <button class="btn btn-primary" style="width:100%" onclick="assignWholesaler()">Assign to Wholesaler</button>
+      <button class="btn btn-ghost" style="width:100%" onclick="showToast('Valuation override mode enabled','warning')">Override Valuation</button>
+      <button class="btn btn-danger" style="width:100%" onclick="showToast('Trade-in rejected and customer notified','error')">Reject Trade-in</button>
+    </div>
+  </div>
+</div><!-- end #view-admin -->
+
+<!-- ============================================================
+     VIEW 3: WHOLESALER MARKETPLACE
+     ============================================================ -->
+<div id="view-wholesaler" class="view">
+  <div class="wholesaler-container">
+
+    <div class="marketplace-header">
+      <div class="marketplace-title">
+        Available Vehicles
+        <span class="count-badge">4</span>
+      </div>
+      <button class="btn btn-ghost btn-sm">&#9776; Filter</button>
+    </div>
+
+    <!-- Filter chips -->
+    <div class="filter-chips">
+      <div class="filter-chip active" onclick="toggleChip(this)">All</div>
+      <div class="filter-chip" onclick="toggleChip(this)">Diesel</div>
+      <div class="filter-chip" onclick="toggleChip(this)">Petrol</div>
+      <div class="filter-chip" onclick="toggleChip(this)">Electric</div>
+      <div class="filter-chip" onclick="toggleChip(this)">BMW</div>
+      <div class="filter-chip" onclick="toggleChip(this)">Audi</div>
+      <div class="filter-chip" onclick="toggleChip(this)">Mercedes</div>
+      <div class="filter-chip" onclick="toggleChip(this)">&lt; &euro;25,000</div>
+      <div class="filter-chip" onclick="toggleChip(this)">&euro;25,000&ndash;40,000</div>
+      <div class="filter-chip" onclick="toggleChip(this)">&gt; &euro;40,000</div>
+    </div>
+
+    <!-- Cars grid -->
+    <div class="cars-grid" id="carsGrid">
+
+      <!-- Card 1: BMW -->
+      <div class="car-card" id="carCard0">
+        <div class="car-photo">
+          <span class="car-silhouette">&#128665;</span>
+          <div class="car-model-badge">2021 BMW</div>
+          <div class="grade-badge grade-b">B</div>
+        </div>
+        <div class="car-body">
+          <div class="car-title">2021 BMW 5 Series 520d</div>
+          <div class="car-specs">87,000 km &middot; Diesel &middot; Automatic &middot; Mineral Grey</div>
+          <div class="ai-damage-summary">Minor scratch front bumper, small rear dent &mdash; Est. repair: &euro;695</div>
+          <div class="car-location">&#128205; <span>Amsterdam, NL</span> &mdash; Ready in 5&ndash;7 days</div>
+          <div class="price-box">
+            <div class="price-label">Wholesale Offer</div>
+            <div class="price-amount">&euro;31,305</div>
+          </div>
+          <div class="price-note">No margin &middot; Direct from owner &middot; VAT excl.</div>
+          <div class="car-actions" id="carActions0">
+            <button class="btn btn-primary" onclick="openPurchaseModal(0)">Accept Purchase</button>
+            <button class="btn btn-ghost" onclick="showToast('Full inspection report opened')">View Full Report</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Audi -->
+      <div class="car-card" id="carCard1">
+        <div class="car-photo">
+          <span class="car-silhouette">&#128665;</span>
+          <div class="car-model-badge">2022 Audi</div>
+          <div class="grade-badge grade-a">A</div>
+        </div>
+        <div class="car-body">
+          <div class="car-title">2022 Audi A4 45 TFSI</div>
+          <div class="car-specs">61,000 km &middot; Petrol &middot; Automatic &middot; Glacier White</div>
+          <div class="ai-damage-summary">No exterior damage detected. Minor interior wear &mdash; Est. repair: &euro;120</div>
+          <div class="car-location">&#128205; <span>Rotterdam, NL</span> &mdash; Ready in 3&ndash;5 days</div>
+          <div class="price-box">
+            <div class="price-label">Wholesale Offer</div>
+            <div class="price-amount">&euro;38,200</div>
+          </div>
+          <div class="price-note">No margin &middot; Direct from owner &middot; VAT excl.</div>
+          <div class="car-actions" id="carActions1">
+            <button class="btn btn-primary" onclick="openPurchaseModal(1)">Accept Purchase</button>
+            <button class="btn btn-ghost" onclick="showToast('Full inspection report opened')">View Full Report</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: VW -->
+      <div class="car-card" id="carCard2">
+        <div class="car-photo">
+          <span class="car-silhouette">&#128665;</span>
+          <div class="car-model-badge">2019 VW</div>
+          <div class="grade-badge grade-c">C</div>
+        </div>
+        <div class="car-body">
+          <div class="car-title">2019 VW Passat 2.0 TDI</div>
+          <div class="car-specs">142,000 km &middot; Diesel &middot; Automatic &middot; Deep Black</div>
+          <div class="ai-damage-summary">Multiple door scratches, cracked tail light, interior wear &mdash; Est. repair: &euro;1,340</div>
+          <div class="car-location">&#128205; <span>Utrecht, NL</span> &mdash; Ready in 7&ndash;10 days</div>
+          <div class="price-box">
+            <div class="price-label">Wholesale Offer</div>
+            <div class="price-amount">&euro;17,900</div>
+          </div>
+          <div class="price-note">No margin &middot; Direct from owner &middot; VAT excl.</div>
+          <div class="car-actions" id="carActions2">
+            <button class="btn btn-primary" onclick="openPurchaseModal(2)">Accept Purchase</button>
+            <button class="btn btn-ghost" onclick="showToast('Full inspection report opened')">View Full Report</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: Mercedes -->
+      <div class="car-card" id="carCard3">
+        <div class="car-photo">
+          <span class="car-silhouette">&#128665;</span>
+          <div class="car-model-badge">2020 Mercedes</div>
+          <div class="grade-badge grade-b">B</div>
+        </div>
+        <div class="car-body">
+          <div class="car-title">2020 Mercedes C200</div>
+          <div class="car-specs">98,000 km &middot; Petrol &middot; Automatic &middot; Obsidian Black</div>
+          <div class="ai-damage-summary">Rear bumper scuff, small stone chips on hood &mdash; Est. repair: &euro;480</div>
+          <div class="car-location">&#128205; <span>Den Haag, NL</span> &mdash; Ready in 5&ndash;7 days</div>
+          <div class="price-box">
+            <div class="price-label">Wholesale Offer</div>
+            <div class="price-amount">&euro;24,500</div>
+          </div>
+          <div class="price-note">No margin &middot; Direct from owner &middot; VAT excl.</div>
+          <div class="car-actions" id="carActions3">
+            <button class="btn btn-primary" onclick="openPurchaseModal(3)">Accept Purchase</button>
+            <button class="btn btn-ghost" onclick="showToast('Full inspection report opened')">View Full Report</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end .cars-grid -->
+  </div>
+</div><!-- end #view-wholesaler -->
+
+<!-- ============================================================
+     WHOLESALER PURCHASE MODAL
+     ============================================================ -->
+<div class="modal-overlay" id="purchaseModal">
+  <div class="modal">
+    <div class="modal-title">Confirm Purchase</div>
+    <div class="modal-subtitle">Review details and select a pickup or delivery date.</div>
+
+    <div class="modal-car-summary">
+      <div class="modal-car-name" id="modalCarName">2021 BMW 5 Series 520d</div>
+      <div class="modal-car-detail" id="modalCarDetail">87,000 km &middot; Diesel &middot; Grade B &middot; Amsterdam, NL</div>
+      <div style="margin-top:10px;font-size:16px;font-weight:800" id="modalCarPrice">&euro;31,305</div>
+    </div>
+
+    <div class="date-input-wrap">
+      <label class="form-label">Select Pickup / Delivery Date</label>
+      <input type="date" class="form-input" id="deliveryDateInput">
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closePurchaseModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmPurchase()">Confirm &amp; Lock Delivery Date</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// APPLICATION STATE
+// ============================================================
+const state = {
+  currentView: 'wizard',
+  wizard: {
+    step: 1,
+    vehicle: null,
+    offer: 31305,
+    inspectionComplete: false,
+    linkedOrder: null,
+  },
+  admin: {
+    activePanelIndex: -1,
+  },
+  wholesaler: {
+    activePurchaseIndex: -1,
+    lockedCards: {},
+  },
+};
+
+// Admin panel data
+const adminRows = [
+  { ref: 'TI-2024-08471', vehicle: '2021 BMW 5 Series 520d', mileage: '87,000 km', offer: '€31,305', median: '€33,800', date: 'Today 09:14' },
+  { ref: 'TI-2024-08469', vehicle: '2022 Audi A4 45 TFSI', mileage: '61,000 km', offer: '€38,200', median: '€41,500', date: 'Today 08:31' },
+  { ref: 'TI-2024-08465', vehicle: '2019 VW Passat 2.0 TDI', mileage: '142,000 km', offer: '€17,900', median: '€20,400', date: 'Yesterday' },
+  { ref: 'TI-2024-08460', vehicle: '2020 Mercedes C200', mileage: '98,000 km', offer: '€24,500', median: '€27,100', date: 'Mar 15' },
+  { ref: 'TI-2024-08451', vehicle: '2018 Volvo XC60', mileage: '113,000 km', offer: '€21,200', median: '€24,800', date: 'Mar 14' },
+];
+
+// Wholesaler car data
+const wsCarData = [
+  { name: '2021 BMW 5 Series 520d', detail: '87,000 km · Diesel · Grade B · Amsterdam, NL', price: '€31,305' },
+  { name: '2022 Audi A4 45 TFSI', detail: '61,000 km · Petrol · Grade A · Rotterdam, NL', price: '€38,200' },
+  { name: '2019 VW Passat 2.0 TDI', detail: '142,000 km · Diesel · Grade C · Utrecht, NL', price: '€17,900' },
+  { name: '2020 Mercedes C200', detail: '98,000 km · Petrol · Grade B · Den Haag, NL', price: '€24,500' },
+];
+
+// ============================================================
+// VIEW SWITCHING
+// ============================================================
+function switchView(viewName) {
+  // Update nav tabs
+  document.querySelectorAll('.nav-tab').forEach((t, i) => {
+    const views = ['wizard', 'admin', 'wholesaler'];
+    t.classList.toggle('active', views[i] === viewName);
+  });
+  // Show/hide views
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + viewName).classList.add('active');
+  state.currentView = viewName;
+}
+
+// ============================================================
+// WIZARD NAVIGATION
+// ============================================================
+function goToStep(n) {
+  // Hide all steps
+  document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active'));
+  // Show target step
+  document.getElementById('step' + n).classList.add('active');
+  state.wizard.step = n;
+  // Show/hide progress bar (hidden on hero)
+  const progress = document.getElementById('wizardProgress');
+  progress.style.display = n === 1 ? 'none' : 'block';
+  // Update progress indicators
+  updateProgress(n);
+  // Scroll to top of content
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateProgress(current) {
+  for (let i = 1; i <= 7; i++) {
+    const el = document.getElementById('pstep' + i);
+    if (!el) continue;
+    el.classList.remove('done', 'active');
+    if (i < current) el.classList.add('done');
+    else if (i === current) el.classList.add('active');
+  }
+}
+
+// ============================================================
+// STEP 2: VEHICLE LOOKUP
+// ============================================================
+function formatPlate(input) {
+  // Auto-uppercase
+  input.value = input.value.toUpperCase();
+}
+
+function toggleManual() {
+  const fields = document.getElementById('manualFields');
+  fields.classList.toggle('open');
+}
+
+async function lookupVehicle() {
+  const plate = document.getElementById('plateInput').value.trim();
+  const odometer = document.getElementById('odomInput').value;
+
+  if (!plate && !document.getElementById('manualMake').value) {
+    showToast('Please enter a license plate or fill in vehicle details manually', 'error');
+    return;
+  }
+
+  showSpinner('Looking up your vehicle...');
+
+  // Normalize plate for RDW API (remove dashes, uppercase)
+  const rdwPlate = plate.replace(/-/g, '').toUpperCase();
+
+  let vehicleData = null;
+
+  // Try jp.cars API first
+  try {
+    const res = await fetch(`https://api.nl.jp.cars/api/valuate/extended?plate=${rdwPlate}`, {
+      signal: AbortSignal.timeout(3000),
+    });
+    if (res.ok) {
+      vehicleData = await res.json();
+    }
+  } catch (e) {
+    // Fall through to RDW
+  }
+
+  // Try RDW open data API as fallback
+  if (!vehicleData) {
+    try {
+      const rdwRes = await fetch(`https://opendata.rdw.nl/resource/m9d7-ebf2.json?kenteken=${rdwPlate}`, {
+        signal: AbortSignal.timeout(4000),
+      });
+      if (rdwRes.ok) {
+        const rdwData = await rdwRes.json();
+        if (rdwData && rdwData.length > 0) {
+          const d = rdwData[0];
+          vehicleData = {
+            make: toTitleCase(d.merk || 'BMW'),
+            model: toTitleCase(d.handelsbenaming || '5 Series 520d'),
+            year: d.datum_eerste_toelating ? parseInt(d.datum_eerste_toelating.slice(0, 4)) : 2021,
+            fuel: translateFuel(d.brandstof_omschrijving || 'Diesel'),
+            transmission: d.inrichting === 'personenauto' ? 'Automatic' : 'Automatic',
+            color: toTitleCase(d.eerste_kleur || 'Mineral Grey'),
+            body: 'Sedan',
+            mileage_provided: parseInt(odometer) || 87000,
+          };
+        }
+      }
+    } catch (e) {
+      // Fall through to mock
+    }
+  }
+
+  // Mock fallback data
+  if (!vehicleData) {
+    await new Promise(r => setTimeout(r, 800)); // simulate delay
+    vehicleData = {
+      make: 'BMW',
+      model: '5 Series 520d',
+      year: 2021,
+      fuel: 'Diesel',
+      transmission: 'Automatic',
+      color: 'Mineral Grey',
+      body: 'Sedan',
+      mileage_provided: parseInt(odometer) || 87000,
+    };
+  }
+
+  state.wizard.vehicle = vehicleData;
+
+  // Update car banner on step 3
+  const bannerText = `${vehicleData.year} ${vehicleData.make} ${vehicleData.model} · ${vehicleData.fuel} · ${vehicleData.transmission} · ${vehicleData.color}`;
+  document.getElementById('carBannerText').textContent = bannerText;
+
+  hideSpinner();
+  goToStep(3);
+  showToast('Vehicle identified successfully!');
+}
+
+function toTitleCase(str) {
+  return str.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+}
+
+function translateFuel(rdwFuel) {
+  const map = { 'BENZINE': 'Petrol', 'DIESEL': 'Diesel', 'ELEKTRICITEIT': 'Electric', 'HYBRIDE': 'Hybrid' };
+  return map[rdwFuel.toUpperCase()] || rdwFuel;
+}
+
+// ============================================================
+// SPINNER
+// ============================================================
+function showSpinner(text) {
+  document.getElementById('spinnerText').textContent = text || 'Loading...';
+  document.getElementById('spinnerOverlay').classList.add('active');
+}
+
+function hideSpinner() {
+  document.getElementById('spinnerOverlay').classList.remove('active');
+}
+
+// ============================================================
+// STEP 4: PHOTO UPLOAD SIMULATION
+// ============================================================
+function simulateUpload(zoneId) {
+  const zone = document.getElementById(zoneId);
+  if (zone.classList.contains('uploaded')) return;
+  // Show a temporary "uploading" state
+  zone.style.opacity = '0.6';
+  setTimeout(() => {
+    zone.classList.add('uploaded');
+    zone.style.opacity = '1';
+  }, 900);
+}
+
+function runAIAnalysis() {
+  const analyzeBtn = document.getElementById('analyzeBtn');
+  const step4BackNav = document.getElementById('step4BackNav');
+
+  // Simulate all photos uploaded
+  ['zone-front','zone-rear','zone-driver','zone-passenger','zone-interior','zone-dashboard'].forEach(id => {
+    document.getElementById(id).classList.add('uploaded');
+  });
+
+  analyzeBtn.disabled = true;
+  analyzeBtn.textContent = 'Analyzing...';
+  showSpinner('AI is analyzing your photos...');
+
+  setTimeout(() => {
+    hideSpinner();
+    analyzeBtn.style.display = 'none';
+    step4BackNav.style.display = 'none';
+    const results = document.getElementById('aiResults');
+    results.classList.add('visible');
+    state.wizard.inspectionComplete = true;
+    showToast('AI analysis complete — 3 issues detected');
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  }, 3000);
+}
+
+// ============================================================
+// STEP 5: TRANSPARENCY TOGGLE
+// ============================================================
+function toggleTransparency() {
+  const content = document.getElementById('transparencyContent');
+  content.classList.toggle('open');
+}
+
+// ============================================================
+// STEP 6: LINK ORDER
+// ============================================================
+function linkOrder() {
+  const ref = document.getElementById('orderRefInput').value.trim();
+  if (!ref) {
+    showToast('Please enter a Tesla order reference', 'error');
+    return;
+  }
+  state.wizard.linkedOrder = ref;
+  document.getElementById('linkedOrderRef').textContent = ref;
+  document.getElementById('orderLinkSuccess').classList.add('visible');
+  // Update step 7 confirmation
+  document.getElementById('confOrderRef').textContent = ref;
+  showToast('Order ' + ref + ' linked successfully!');
+}
+
+// ============================================================
+// ADMIN: SIDE PANEL
+// ============================================================
+function openPanel(idx) {
+  const row = adminRows[idx];
+  document.getElementById('panelTitle').textContent = 'Trade-in Details';
+  document.getElementById('panelRef').textContent = row.ref;
+  document.getElementById('panelVehicle').textContent = row.vehicle;
+  document.getElementById('panelMileage').textContent = row.mileage;
+  document.getElementById('panelDate').textContent = row.date;
+  document.getElementById('panelMedian').textContent = row.median;
+  document.getElementById('panelOffer').textContent = row.offer;
+
+  state.admin.activePanelIndex = idx;
+  document.getElementById('sidePanelOverlay').classList.add('active');
+  document.getElementById('sidePanel').classList.add('open');
+}
+
+function closePanel() {
+  document.getElementById('sidePanelOverlay').classList.remove('active');
+  document.getElementById('sidePanel').classList.remove('open');
+  state.admin.activePanelIndex = -1;
+}
+
+function assignWholesaler() {
+  const sel = document.getElementById('wholesalerSelect');
+  const name = sel.value;
+  if (!name) {
+    showToast('Please select a wholesaler', 'error');
+    return;
+  }
+  showToast('Assigned to ' + name + '. Wholesaler notified via email.');
+  closePanel();
+}
+
+function filterTable(val) {
+  // Simple filter: show/hide rows based on text content
+  const rows = document.querySelectorAll('#adminTable tbody tr');
+  rows.forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(val.toLowerCase()) ? '' : 'none';
+  });
+}
+
+// ============================================================
+// WHOLESALER: PURCHASE MODAL
+// ============================================================
+function openPurchaseModal(idx) {
+  state.wholesaler.activePurchaseIndex = idx;
+  const car = wsCarData[idx];
+  document.getElementById('modalCarName').textContent = car.name;
+  document.getElementById('modalCarDetail').textContent = car.detail;
+  document.getElementById('modalCarPrice').textContent = car.price;
+
+  // Set min date to today + 3
+  const minDate = new Date();
+  minDate.setDate(minDate.getDate() + 3);
+  const minStr = minDate.toISOString().split('T')[0];
+  const dateInput = document.getElementById('deliveryDateInput');
+  dateInput.min = minStr;
+  dateInput.value = minStr;
+
+  document.getElementById('purchaseModal').classList.add('active');
+}
+
+function closePurchaseModal() {
+  document.getElementById('purchaseModal').classList.remove('active');
+  state.wholesaler.activePurchaseIndex = -1;
+}
+
+function confirmPurchase() {
+  const idx = state.wholesaler.activePurchaseIndex;
+  const dateVal = document.getElementById('deliveryDateInput').value;
+  if (!dateVal) {
+    showToast('Please select a delivery date', 'error');
+    return;
+  }
+
+  // Format date nicely
+  const dateObj = new Date(dateVal);
+  const formatted = dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
+  // Update car card
+  const actionsEl = document.getElementById('carActions' + idx);
+  actionsEl.innerHTML = `<div class="locked-badge">&#128274; Delivery Locked &middot; ${formatted}</div>`;
+
+  // Mark card locked
+  state.wholesaler.lockedCards[idx] = true;
+
+  closePurchaseModal();
+
+  // Show toast
+  const car = wsCarData[idx];
+  showToast('Purchase confirmed. Delivery locked for ' + formatted + '. Tesla has been notified.');
+}
+
+// ============================================================
+// TOAST NOTIFICATIONS
+// ============================================================
+function showToast(message, type) {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = 'toast' + (type ? ' ' + type : '');
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(20px)';
+    toast.style.transition = 'all 300ms ease';
+    setTimeout(() => toast.remove(), 300);
+  }, 4000);
+}
+
+// ============================================================
+// FILTER CHIPS (Wholesaler)
+// ============================================================
+function toggleChip(el) {
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  // Set min date for delivery in wholesaler modal
+  const dateInput = document.getElementById('deliveryDateInput');
+  if (dateInput) {
+    const d = new Date();
+    d.setDate(d.getDate() + 3);
+    dateInput.min = d.toISOString().split('T')[0];
+  }
+
+  // Close modal on overlay click
+  document.getElementById('purchaseModal').addEventListener('click', function(e) {
+    if (e.target === this) closePurchaseModal();
+  });
+
+  // Initialize progress bar
+  updateProgress(1);
+});
+</script>
+</body>
+</html>

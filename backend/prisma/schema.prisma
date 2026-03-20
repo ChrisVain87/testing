@@ -1,0 +1,259 @@
+// Prisma schema for Creature World
+// PostgreSQL + pgvector for memory embeddings
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgvector(map: "vector"), postgis(map: "postgis", version: "3.3")]
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  username     String    @unique
+  passwordHash String
+  creature     Creature?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  lastSeenAt   DateTime  @default(now())
+  isOnline     Boolean   @default(false)
+  isBanned     Boolean   @default(false)
+
+  reports      ModerationReport[] @relation("reporter")
+  reported     ModerationReport[] @relation("reported_user")
+
+  @@index([email])
+  @@index([username])
+}
+
+model Creature {
+  id            String   @id @default(uuid())
+  name          String
+  preset        String
+  colorVariant  Int      @default(0)
+  emoji         String
+
+  // Ownership
+  owner         User     @relation(fields: [ownerId], references: [id])
+  ownerId       String   @unique
+
+  // AI config (API key stored AES-encrypted)
+  llmProvider   String   // 'openai' | 'anthropic' | 'google' | 'xai'
+  llmModel      String
+  encryptedApiKey String
+
+  // Position
+  posX          Int      @default(0)
+  posY          Int      @default(0)
+  chunkX        Int      @default(0)
+  chunkY        Int      @default(0)
+
+  // Stats
+  health        Int      @default(100)
+  maxHealth     Int      @default(100)
+  energy        Int      @default(100)
+  maxEnergy     Int      @default(100)
+  food          Int      @default(100)
+  maxFood       Int      @default(100)
+  materials     Int      @default(100)
+  maxMaterials  Int      @default(100)
+  speed         Float    @default(1.0)
+  level         Int      @default(1)
+  experience    Int      @default(0)
+
+  // Behavior
+  systemPrompt        String   @db.Text
+  currentBehaviorPlan Json?
+  promptCooldownEndsAt DateTime?
+  lastLLMCallAt       DateTime?
+
+  // Territory
+  totalTilesOwned Int @default(0)
+  totalStructures Int @default(0)
+  biomeInventions Int @default(0)
+
+  // Social
+  alliances     CreatureAlliance[] @relation("creature_alliances")
+  allyOf        CreatureAlliance[] @relation("ally_alliances")
+
+  // Relations
+  tiles         Tile[]
+  structures    Structure[]
+  memories      CreatureMemory[]
+  customBiomes  CustomBiome[]
+  events        WorldEvent[]
+
+  isOnline      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([posX, posY])
+  @@index([chunkX, chunkY])
+  @@index([level])
+  @@index([totalTilesOwned])
+}
+
+model CreatureAlliance {
+  id         String   @id @default(uuid())
+  creature   Creature @relation("creature_alliances", fields: [creatureId], references: [id])
+  creatureId String
+  ally       Creature @relation("ally_alliances", fields: [allyId], references: [id])
+  allyId     String
+  formedAt   DateTime @default(now())
+
+  @@unique([creatureId, allyId])
+  @@index([creatureId])
+  @@index([allyId])
+}
+
+model Chunk {
+  id         String   @id @default(uuid())
+  x          Int
+  y          Int
+  seed       BigInt
+  isDirty    Boolean  @default(false)
+  lastModAt  DateTime @default(now())
+  tiles      Tile[]
+
+  @@unique([x, y])
+  @@index([x, y])
+  @@index([isDirty])
+}
+
+model Tile {
+  id              String   @id @default(uuid())
+  globalX         Int
+  globalY         Int
+  chunkX          Int
+  chunkY          Int
+  type            String   @default("grass")
+  customName      String?
+  customColor     Int?
+  customProperties Json?
+
+  // Ownership
+  owner           Creature? @relation(fields: [ownerId], references: [id])
+  ownerId         String?
+
+  chunk           Chunk    @relation(fields: [chunkId], references: [id])
+  chunkId         String
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([globalX, globalY])
+  @@index([globalX, globalY])
+  @@index([chunkX, chunkY])
+  @@index([ownerId])
+  @@index([type])
+}
+
+model Structure {
+  id           String   @id @default(uuid())
+  type         String
+  customName   String?
+  posX         Int
+  posY         Int
+  chunkX       Int
+  chunkY       Int
+  level        Int      @default(1)
+  properties   Json     @default("{}")
+
+  owner        Creature @relation(fields: [ownerId], references: [id])
+  ownerId      String
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([posX, posY])
+  @@index([chunkX, chunkY])
+  @@index([ownerId])
+  @@index([type])
+}
+
+model CreatureMemory {
+  id          String   @id @default(uuid())
+  creature    Creature @relation(fields: [creatureId], references: [id])
+  creatureId  String
+  content     String   @db.Text
+  importance  Int      @default(5) // 1-10
+  category    String   // 'exploration' | 'combat' | 'building' | 'social' | 'discovery' | 'economy'
+
+  // pgvector embedding for semantic search
+  embedding   Unsupported("vector(1536)")?
+
+  relatedCreatureIds String[] @default([])
+  isGlobal    Boolean  @default(false) // shared to global knowledge base (opt-in)
+
+  createdAt   DateTime @default(now())
+
+  @@index([creatureId])
+  @@index([category])
+  @@index([importance])
+}
+
+model CustomBiome {
+  id            String   @id @default(uuid())
+  name          String
+  tileType      String
+  color         Int
+  rules         Json     @default("{}")
+  description   String   @db.Text
+
+  inventedBy    Creature @relation(fields: [inventedById], references: [id])
+  inventedById  String
+
+  popularity    Int      @default(0) // how many tiles use this biome
+  isApproved    Boolean  @default(true) // moderation
+
+  createdAt     DateTime @default(now())
+
+  @@index([inventedById])
+  @@index([popularity])
+  @@index([isApproved])
+}
+
+model WorldEvent {
+  id          String   @id @default(uuid())
+  type        String
+  creature    Creature @relation(fields: [creatureId], references: [id])
+  creatureId  String
+  creatureName String
+  details     Json
+  posX        Int
+  posY        Int
+  chunkX      Int
+  chunkY      Int
+  timestamp   DateTime @default(now())
+
+  @@index([type])
+  @@index([creatureId])
+  @@index([timestamp])
+  @@index([chunkX, chunkY])
+}
+
+model ModerationReport {
+  id            String   @id @default(uuid())
+  reporter      User     @relation("reporter", fields: [reporterId], references: [id])
+  reporterId    String
+  reportedUser  User     @relation("reported_user", fields: [reportedUserId], references: [id])
+  reportedUserId String
+  reason        String
+  status        String   @default("pending") // 'pending' | 'reviewed' | 'actioned'
+  createdAt     DateTime @default(now())
+
+  @@index([status])
+  @@index([reporterId])
+  @@index([reportedUserId])
+}
+
+model GlobalSeed {
+  id        Int    @id @default(1)
+  seed      BigInt
+  createdAt DateTime @default(now())
+}

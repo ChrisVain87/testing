@@ -1,0 +1,204 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #0d0d1a;
+    color: #e2e8f0;
+    font-family: 'Inter', system-ui, sans-serif;
+    height: 100%;
+    width: 100%;
+  }
+
+  #root {
+    height: 100%;
+    width: 100%;
+  }
+
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #1a1a2e;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #4c6ef5;
+    border-radius: 2px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #748ffc;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary-600 hover:bg-primary-700 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply bg-game-elevated hover:bg-game-border text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200 border border-game-border disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-danger {
+    @apply bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .card {
+    @apply bg-game-surface border border-game-border rounded-xl p-4;
+  }
+
+  .card-elevated {
+    @apply bg-game-elevated border border-game-border rounded-xl p-4;
+  }
+
+  .input {
+    @apply bg-game-darker border border-game-border text-white placeholder-gray-500 rounded-lg px-3 py-2 w-full focus:outline-none focus:border-primary-500 transition-colors;
+  }
+
+  .label {
+    @apply text-sm font-medium text-gray-300 mb-1 block;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
+  }
+
+  .badge-blue {
+    @apply badge bg-blue-900/50 text-blue-300 border border-blue-700/50;
+  }
+
+  .badge-green {
+    @apply badge bg-green-900/50 text-green-300 border border-green-700/50;
+  }
+
+  .badge-yellow {
+    @apply badge bg-yellow-900/50 text-yellow-300 border border-yellow-700/50;
+  }
+
+  .badge-red {
+    @apply badge bg-red-900/50 text-red-300 border border-red-700/50;
+  }
+
+  .stat-row {
+    @apply flex justify-between items-center py-1 border-b border-game-border/50 last:border-0;
+  }
+
+  .stat-label {
+    @apply text-gray-400 text-sm;
+  }
+
+  .stat-value {
+    @apply text-white text-sm font-medium;
+  }
+
+  /* Phaser canvas container */
+  #game-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+  }
+
+  #game-container canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  /* UI overlay */
+  .ui-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  .ui-overlay > * {
+    pointer-events: auto;
+  }
+
+  /* Glass effect */
+  .glass {
+    @apply bg-game-surface/80 backdrop-blur-md border border-game-border/60;
+  }
+
+  /* Glow effects */
+  .glow-blue {
+    box-shadow: 0 0 10px rgba(96, 165, 250, 0.3);
+  }
+
+  .glow-red {
+    box-shadow: 0 0 10px rgba(233, 69, 96, 0.3);
+  }
+
+  .glow-gold {
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+  }
+
+  /* Progress bar */
+  .progress-bar {
+    @apply h-2 bg-game-darker rounded-full overflow-hidden;
+  }
+
+  .progress-fill {
+    @apply h-full rounded-full transition-all duration-500;
+  }
+
+  /* Creature emoji */
+  .creature-emoji {
+    font-size: 2rem;
+    line-height: 1;
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+  }
+
+  /* Notification dot */
+  .notification-dot {
+    @apply absolute -top-1 -right-1 w-3 h-3 bg-game-accent rounded-full;
+  }
+
+  /* Cooldown timer */
+  .cooldown-ring {
+    animation: cooldown-spin 4s linear infinite;
+  }
+
+  @keyframes cooldown-spin {
+    from { stroke-dashoffset: 283; }
+    to { stroke-dashoffset: 0; }
+  }
+}
+
+@layer utilities {
+  .text-shadow {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  }
+
+  .no-select {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .touch-action-none {
+    touch-action: none;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+}
